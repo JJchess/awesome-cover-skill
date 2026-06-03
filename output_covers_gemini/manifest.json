@@ -1,0 +1,26 @@
+[
+  {
+    "index": 1,
+    "product_type": "云课堂",
+    "title_text": "Rust 内存模型深度拆解",
+    "spec": "云课堂 · 层叠纸艺 diorama · 米白+琥珀+墨 · 右主体左留白",
+    "prompt": "Editorial-quality course cover art, art-directed and hand-crafted. A winding path of warm translucent paper-craft steps ascending through structured geometric gates and delicate bridges, a visual metaphor for structured learning of ownership boundaries and lifespans. Layered paper-craft diorama, soft 3D depth, warm daylight from upper-left casting soft shadows, elegant matte finish with fine film grain. Composition: focal elements on the right, clean spacious negative space on the lower-left. Palette: cream, warm amber accents, and deep ink. Integrate the title text \"Rust 内存模型深度拆解\" as a deliberate typographic element: clean modern sans-serif, horizontal, high contrast, placed in the lower-left negative space; spell it exactly, no extra words. 16:10 aspect ratio. Avoid: no neon circuit boards, no tech-blue-on-black, no plastic glossy 3D, no fake bokeh, no floating UI panels, no centered symmetric blob, no garbled text.",
+    "image": "output_covers_gemini\\01_云课堂.png"
+  },
+  {
+    "index": 2,
+    "product_type": "代码实验室",
+    "title_text": "金融时间序列与冲击预测",
+    "spec": "代码实验室 · 数据可视化雕塑 · 石板灰+米白+电光蓝 · 对角动势",
+    "prompt": "Editorial-quality cover art for a computational notebook, art-directed and hand-crafted. Elegant data-visualization-as-art: a series of sculpted matte ribbons representing financial time series flowing diagonally across a precise slate-grey grid, featuring a sudden sharp peak symbolizing a forecasted market shock. Clean studio lighting with a single defined source, matte finish with subtle paper-like texture. Composition: dynamic diagonal movement, leaving the top-left corner open and clean for text. Palette: slate-grey, off-white, with a single electric-blue accent line tracing the shock. Integrate the title text \"金融时间序列与冲击预测\" as a deliberate typographic element: clean modern sans-serif, horizontal, high legibility, placed in the top-left negative space; spell it exactly, no extra words. 16:10 aspect ratio. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no plastic glossy 3D, no fake bokeh, no floating UI panels.",
+    "image": "output_covers_gemini\\02_代码实验室.png"
+  },
+  {
+    "index": 3,
+    "product_type": "互动场景",
+    "title_text": null,
+    "spec": "互动场景 · 舞台聚光 · 紫罗兰+青+暖光 · 满版场景",
+    "prompt": "Editorial-quality cover art for an interactive agent scenario, art-directed and hand-crafted. A minimalist theatrical stage with three distinct abstract geometric figures positioned in a circle under soft warm spotlights, exchanging geometric data fragments and dialogue lines — a metaphor for multi-agent market research and division of tasks. Soft dramatic lighting with long shadows, matte textured finish with fine film grain, intentional asymmetry. Composition: off-center staging with a generous clean negative space on the left reserved for title safety. Palette: deep violet, teal, and warm spotlight glow. No text or typography is present. 16:10 aspect ratio. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no floating UI panels, no garbled text.",
+    "image": "output_covers_gemini\\03_互动场景.png"
+  }
+]
