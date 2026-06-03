@@ -1,0 +1,33 @@
+{
+  "skill_name": "cover-art-director",
+  "evals": [
+    {
+      "id": 0,
+      "name": "yunketang-with-title",
+      "prompt": "我们在做平台的云课堂产品，需要给一门课生成封面图（喂给 Nano Banana / gemini flash image）。课程 title 是「Rust 内存模型深度拆解」，副标题/概念是「所有权、生命周期与无畏并发」。给我一条可以直接用的英文文生图 prompt，封面里要把这个 title 显示出来。",
+      "expected_output": "一条英文 prompt：识别为云课堂、暖色编辑领地、含标题渲染规格、16:10、带去AI味排除项、有规格说明。",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "code-lab-notebook",
+      "prompt": "代码实验室里有个 notebook 实验项目，标题「金融时间序列与冲击预测」，做的是基于异质冲击编码的波动率量化模型。帮我写一条文生图封面 prompt（英文，给 Nano Banana 用），16:10。",
+      "expected_output": "一条英文 prompt：识别为代码实验室、冷精确领地、明确避开霓虹电路/矩阵 AI 味、数据可视化或工作台媒介、16:10、规格说明。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "interactive-multiagent",
+      "prompt": "互动场景产品要一张封面图。场景是多个 AI Agent 协作完成一次市场调研，有角色分工和多智能体讨论。写个英文文生图 prompt 给 Nano Banana。",
+      "expected_output": "一条英文 prompt：识别为互动场景、鲜亮动势领地、多智能体/节点星座/舞台母题、16:10、规格说明。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "yunketang-batch-diversity",
+      "prompt": "给云课堂一次性出 3 门课的封面 prompt：1)「Python 数据分析入门」2)「深度学习进阶之路」3)「算法与数据结构体系课」。都是给 Nano Banana 的英文文生图 prompt，16:10。",
+      "expected_output": "三条英文 prompt，都属云课堂暖色领地但媒介和色族明显铺开不雷同（防模板化），各带规格说明。",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,400 @@
+{
+  "metadata": {
+    "skill_name": "cover-art-director",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-03T11:02:47Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 52.5,
+        "tokens": 28363,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u58f0\u660e 16:10 \u753b\u5e45",
+          "passed": true,
+          "evidence": "found '16:10'"
+        },
+        {
+          "text": "\u542b\u660e\u786e\u7684\u53bbAI\u5473\u6392\u9664\u6e05\u5355(\u22654\u9879)",
+          "passed": true,
+          "evidence": "avoid section=True, terms=10"
+        },
+        {
+          "text": "\u672a\u628aAI\u5473\u7f8e\u5b66(\u9713\u8679/\u73bb\u7483\u62df\u6001/\u4f53\u79ef\u5149\u7b49)\u5f53\u4f5c\u6b63\u5411\u98ce\u683c",
+          "passed": true,
+          "evidence": "positive AI-smell mentions=0"
+        },
+        {
+          "text": "\u6b63\u786e\u8bc6\u522b\u4ea7\u54c1\u7c7b\u578b(\u4e91\u8bfe\u5802)",
+          "passed": true,
+          "evidence": "'\u4e91\u8bfe\u5802' present=True"
+        },
+        {
+          "text": "\u6807\u9898\u4ee5\u5f15\u53f7\u9501\u5b9a\u786e\u5207\u6587\u5b57\u5e76\u8981\u6c42\u7cbe\u786e\u62fc\u5199",
+          "passed": true,
+          "evidence": "quoted=True, spell-exactly=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 48.0,
+        "tokens": 28218,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u58f0\u660e 16:10 \u753b\u5e45",
+          "passed": true,
+          "evidence": "found '16:10'"
+        },
+        {
+          "text": "\u542b\u660e\u786e\u7684\u53bbAI\u5473\u6392\u9664\u6e05\u5355(\u22654\u9879)",
+          "passed": true,
+          "evidence": "avoid section=True, terms=10"
+        },
+        {
+          "text": "\u672a\u628aAI\u5473\u7f8e\u5b66(\u9713\u8679/\u73bb\u7483\u62df\u6001/\u4f53\u79ef\u5149\u7b49)\u5f53\u4f5c\u6b63\u5411\u98ce\u683c",
+          "passed": true,
+          "evidence": "positive AI-smell mentions=0"
+        },
+        {
+          "text": "\u6b63\u786e\u8bc6\u522b\u4ea7\u54c1\u7c7b\u578b(\u4ee3\u7801\u5b9e\u9a8c\u5ba4)",
+          "passed": true,
+          "evidence": "'\u4ee3\u7801\u5b9e\u9a8c\u5ba4' present=True"
+        },
+        {
+          "text": "\u6807\u9898\u4ee5\u5f15\u53f7\u9501\u5b9a\u786e\u5207\u6587\u5b57\u5e76\u8981\u6c42\u7cbe\u786e\u62fc\u5199",
+          "passed": true,
+          "evidence": "quoted=True, spell-exactly=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 48.3,
+        "tokens": 28004,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u58f0\u660e 16:10 \u753b\u5e45",
+          "passed": true,
+          "evidence": "found '16:10'"
+        },
+        {
+          "text": "\u542b\u660e\u786e\u7684\u53bbAI\u5473\u6392\u9664\u6e05\u5355(\u22654\u9879)",
+          "passed": true,
+          "evidence": "avoid section=True, terms=10"
+        },
+        {
+          "text": "\u672a\u628aAI\u5473\u7f8e\u5b66(\u9713\u8679/\u73bb\u7483\u62df\u6001/\u4f53\u79ef\u5149\u7b49)\u5f53\u4f5c\u6b63\u5411\u98ce\u683c",
+          "passed": true,
+          "evidence": "positive AI-smell mentions=0"
+        },
+        {
+          "text": "\u6b63\u786e\u8bc6\u522b\u4ea7\u54c1\u7c7b\u578b(\u4e92\u52a8\u573a\u666f)",
+          "passed": true,
+          "evidence": "'\u4e92\u52a8\u573a\u666f' present=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 61.6,
+        "tokens": 29519,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u58f0\u660e 16:10 \u753b\u5e45",
+          "passed": true,
+          "evidence": "found '16:10'"
+        },
+        {
+          "text": "\u542b\u660e\u786e\u7684\u53bbAI\u5473\u6392\u9664\u6e05\u5355(\u22654\u9879)",
+          "passed": true,
+          "evidence": "avoid section=True, terms=10"
+        },
+        {
+          "text": "\u672a\u628aAI\u5473\u7f8e\u5b66(\u9713\u8679/\u73bb\u7483\u62df\u6001/\u4f53\u79ef\u5149\u7b49)\u5f53\u4f5c\u6b63\u5411\u98ce\u683c",
+          "passed": true,
+          "evidence": "positive AI-smell mentions=0"
+        },
+        {
+          "text": "\u6b63\u786e\u8bc6\u522b\u4ea7\u54c1\u7c7b\u578b(\u4e91\u8bfe\u5802)",
+          "passed": true,
+          "evidence": "'\u4e91\u8bfe\u5802' present=True"
+        },
+        {
+          "text": "\u6279\u91cf3\u5f20\u5a92\u4ecb\u4e0e\u8272\u65cf\u660e\u663e\u94fa\u5f00(\u22652\u5a92\u4ecb & \u22654\u8272\u5f69\u8bcd)",
+          "passed": true,
+          "evidence": "mediums=['diorama', 'editorial illustration', 'isometric', 'paper-craft'], palette_words=9"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 41.4,
+        "tokens": 19500,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u58f0\u660e 16:10 \u753b\u5e45",
+          "passed": true,
+          "evidence": "found '16:10'"
+        },
+        {
+          "text": "\u542b\u660e\u786e\u7684\u53bbAI\u5473\u6392\u9664\u6e05\u5355(\u22654\u9879)",
+          "passed": false,
+          "evidence": "avoid section=True, terms=2"
+        },
+        {
+          "text": "\u672a\u628aAI\u5473\u7f8e\u5b66(\u9713\u8679/\u73bb\u7483\u62df\u6001/\u4f53\u79ef\u5149\u7b49)\u5f53\u4f5c\u6b63\u5411\u98ce\u683c",
+          "passed": false,
+          "evidence": "positive AI-smell mentions=4"
+        },
+        {
+          "text": "\u6b63\u786e\u8bc6\u522b\u4ea7\u54c1\u7c7b\u578b(\u4e91\u8bfe\u5802)",
+          "passed": true,
+          "evidence": "'\u4e91\u8bfe\u5802' present=True"
+        },
+        {
+          "text": "\u6807\u9898\u4ee5\u5f15\u53f7\u9501\u5b9a\u786e\u5207\u6587\u5b57\u5e76\u8981\u6c42\u7cbe\u786e\u62fc\u5199",
+          "passed": false,
+          "evidence": "quoted=False, spell-exactly=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 32.4,
+        "tokens": 18824,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u58f0\u660e 16:10 \u753b\u5e45",
+          "passed": true,
+          "evidence": "found '16:10'"
+        },
+        {
+          "text": "\u542b\u660e\u786e\u7684\u53bbAI\u5473\u6392\u9664\u6e05\u5355(\u22654\u9879)",
+          "passed": false,
+          "evidence": "avoid section=True, terms=0"
+        },
+        {
+          "text": "\u672a\u628aAI\u5473\u7f8e\u5b66(\u9713\u8679/\u73bb\u7483\u62df\u6001/\u4f53\u79ef\u5149\u7b49)\u5f53\u4f5c\u6b63\u5411\u98ce\u683c",
+          "passed": false,
+          "evidence": "positive AI-smell mentions=4"
+        },
+        {
+          "text": "\u6b63\u786e\u8bc6\u522b\u4ea7\u54c1\u7c7b\u578b(\u4ee3\u7801\u5b9e\u9a8c\u5ba4)",
+          "passed": false,
+          "evidence": "'\u4ee3\u7801\u5b9e\u9a8c\u5ba4' present=False"
+        },
+        {
+          "text": "\u6807\u9898\u4ee5\u5f15\u53f7\u9501\u5b9a\u786e\u5207\u6587\u5b57\u5e76\u8981\u6c42\u7cbe\u786e\u62fc\u5199",
+          "passed": false,
+          "evidence": "quoted=False, spell-exactly=False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.25,
+        "passed": 1,
+        "failed": 3,
+        "total": 4,
+        "time_seconds": 37.1,
+        "tokens": 19156,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u58f0\u660e 16:10 \u753b\u5e45",
+          "passed": false,
+          "evidence": "missing 16:10"
+        },
+        {
+          "text": "\u542b\u660e\u786e\u7684\u53bbAI\u5473\u6392\u9664\u6e05\u5355(\u22654\u9879)",
+          "passed": false,
+          "evidence": "avoid section=True, terms=2"
+        },
+        {
+          "text": "\u672a\u628aAI\u5473\u7f8e\u5b66(\u9713\u8679/\u73bb\u7483\u62df\u6001/\u4f53\u79ef\u5149\u7b49)\u5f53\u4f5c\u6b63\u5411\u98ce\u683c",
+          "passed": false,
+          "evidence": "positive AI-smell mentions=10"
+        },
+        {
+          "text": "\u6b63\u786e\u8bc6\u522b\u4ea7\u54c1\u7c7b\u578b(\u4e92\u52a8\u573a\u666f)",
+          "passed": true,
+          "evidence": "'\u4e92\u52a8\u573a\u666f' present=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 33.9,
+        "tokens": 19256,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u58f0\u660e 16:10 \u753b\u5e45",
+          "passed": true,
+          "evidence": "found '16:10'"
+        },
+        {
+          "text": "\u542b\u660e\u786e\u7684\u53bbAI\u5473\u6392\u9664\u6e05\u5355(\u22654\u9879)",
+          "passed": false,
+          "evidence": "avoid section=True, terms=3"
+        },
+        {
+          "text": "\u672a\u628aAI\u5473\u7f8e\u5b66(\u9713\u8679/\u73bb\u7483\u62df\u6001/\u4f53\u79ef\u5149\u7b49)\u5f53\u4f5c\u6b63\u5411\u98ce\u683c",
+          "passed": false,
+          "evidence": "positive AI-smell mentions=8"
+        },
+        {
+          "text": "\u6b63\u786e\u8bc6\u522b\u4ea7\u54c1\u7c7b\u578b(\u4e91\u8bfe\u5802)",
+          "passed": true,
+          "evidence": "'\u4e91\u8bfe\u5802' present=True"
+        },
+        {
+          "text": "\u6279\u91cf3\u5f20\u5a92\u4ecb\u4e0e\u8272\u65cf\u660e\u663e\u94fa\u5f00(\u22652\u5a92\u4ecb & \u22654\u8272\u5f69\u8bcd)",
+          "passed": false,
+          "evidence": "mediums=['blueprint'], palette_words=1"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 52.6,
+        "stddev": 6.3419,
+        "min": 48.0,
+        "max": 61.6
+      },
+      "tokens": {
+        "mean": 28526.0,
+        "stddev": 678.2246,
+        "min": 28004,
+        "max": 29519
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.3125,
+        "stddev": 0.1031,
+        "min": 0.2,
+        "max": 0.4
+      },
+      "time_seconds": {
+        "mean": 36.2,
+        "stddev": 3.9825,
+        "min": 32.4,
+        "max": 41.4
+      },
+      "tokens": {
+        "mean": 19184.0,
+        "stddev": 280.1333,
+        "min": 18824,
+        "max": 19500
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.69",
+      "time_seconds": "+16.4",
+      "tokens": "+9342"
+    }
+  },
+  "notes": []
+}

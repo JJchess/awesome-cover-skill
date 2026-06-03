@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "声明 16:10 画幅",
+      "passed": true,
+      "evidence": "found '16:10'"
+    },
+    {
+      "text": "含明确的去AI味排除清单(≥4项)",
+      "passed": true,
+      "evidence": "avoid section=True, terms=10"
+    },
+    {
+      "text": "未把AI味美学(霓虹/玻璃拟态/体积光等)当作正向风格",
+      "passed": true,
+      "evidence": "positive AI-smell mentions=0"
+    },
+    {
+      "text": "正确识别产品类型(云课堂)",
+      "passed": true,
+      "evidence": "'云课堂' present=True"
+    },
+    {
+      "text": "标题以引号锁定确切文字并要求精确拼写",
+      "passed": true,
+      "evidence": "quoted=True, spell-exactly=True"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

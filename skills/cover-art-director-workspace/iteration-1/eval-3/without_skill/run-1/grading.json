@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "声明 16:10 画幅",
+      "passed": true,
+      "evidence": "found '16:10'"
+    },
+    {
+      "text": "含明确的去AI味排除清单(≥4项)",
+      "passed": false,
+      "evidence": "avoid section=True, terms=3"
+    },
+    {
+      "text": "未把AI味美学(霓虹/玻璃拟态/体积光等)当作正向风格",
+      "passed": false,
+      "evidence": "positive AI-smell mentions=8"
+    },
+    {
+      "text": "正确识别产品类型(云课堂)",
+      "passed": true,
+      "evidence": "'云课堂' present=True"
+    },
+    {
+      "text": "批量3张媒介与色族明显铺开(≥2媒介 & ≥4色彩词)",
+      "passed": false,
+      "evidence": "mediums=['blueprint'], palette_words=1"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.4
+  }
+}
