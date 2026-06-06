@@ -68,6 +68,16 @@ FONT_STYLES = {
               "paths": ["C:/Windows/Fonts/SIMYOU.TTF", "C:/Windows/Fonts/msyh.ttc"]},
     "fangsong": {"label": "华文仿宋", "axes": None, "track": 0.08, "stroke": 0.034,
                  "paths": ["C:/Windows/Fonts/STFANGSO.TTF", "C:/Windows/Fonts/simfang.ttf"]},
+    "light": {"label": "轻细黑体", "axes": [350], "track": 0.10, "stroke": 0,
+              "paths": ["C:/Windows/Fonts/NotoSansSC-VF.ttf", "C:/Windows/Fonts/msyhl.ttc",
+                        "C:/Windows/Fonts/Dengl.ttf"]},
+    "xinwei": {"label": "华文新魏", "axes": None, "track": 0.05, "stroke": 0,
+               "paths": ["C:/Windows/Fonts/STXINWEI.TTF", "C:/Windows/Fonts/STKAITI.TTF"]},
+    "xingkai": {"label": "华文行楷", "axes": None, "track": 0.04, "stroke": 0,
+                "paths": ["C:/Windows/Fonts/STXINGKA.TTF", "C:/Windows/Fonts/STKAITI.TTF"]},
+    "lishu": {"label": "华文隶书", "axes": None, "track": 0.06, "stroke": 0.012,
+              "paths": ["C:/Windows/Fonts/STLITI.TTF", "C:/Windows/Fonts/SIMLI.TTF",
+                        "C:/Windows/Fonts/STKAITI.TTF"]},
 }
 
 # 内置用例对齐 cover-generation-test-cases.md §2 中影响出图输入的 case。
@@ -172,37 +182,52 @@ COMPOSITIONS = [
 ]
 
 
-# 媒介关键词 → 字体风格（顺序即优先级）：让字形气质跟画面媒介属于同一个世界——
-# 编辑插画/印刷/剧场感→宋体；纸艺/手绘批注/动势→楷体；黏土/角色剪影/玩趣→圆体；
-# 蓝图制图→仿宋（工程图纸标准字）；几何拼贴/字体海报→重磅黑体；其余→现代黑体。
-_MEDIUM_FONT_RULES = [
-    (("editorial", "risograph", "macro", "material", "theatrical", "spotlight"), "serif"),
-    (("paper-craft", "hand-annotated", "sketched", "motion"), "kai"),
-    (("clay", "silhouette", "playful"), "round"),
-    (("blueprint", "schematic"), "fangsong"),
-    (("geometric collage", "typographic"), "sans-black"),
+# 媒介关键词 → 字体候选（顺序即气质契合度；首条命中的规则生效）：
+# 让字形气质跟画面媒介属于同一个世界——编辑/印刷→宋体系，蓝图→仿宋（工程图纸标准字），
+# 剧场→新魏（碑刻海报气），动势→行楷，纸艺→楷/隶，黏土/剪影→圆体，
+# 暗色/星座/数据可视化→轻细黑体，几何拼贴/字体海报→重磅黑体。
+_MEDIUM_FONT_PREFS = [
+    (("dark-mode",), ("light", "serif", "sans")),
+    (("editorial", "risograph"), ("serif", "kai", "fangsong")),
+    (("macro", "material"), ("serif", "light", "kai")),
+    (("theatrical", "spotlight"), ("xinwei", "serif", "kai")),
+    (("paper-craft",), ("kai", "lishu", "serif")),
+    (("hand-annotated", "sketched"), ("kai", "xingkai", "fangsong")),
+    (("motion", "dynamic"), ("xingkai", "kai", "sans-black")),
+    (("clay", "playful"), ("round", "kai", "sans")),
+    (("silhouette",), ("round", "sans-black", "sans")),
+    (("constellation", "network"), ("light", "sans", "serif")),
+    (("data-visualization",), ("light", "serif", "sans")),
+    (("blueprint", "schematic"), ("fangsong", "light", "sans")),
+    (("isometric",), ("sans", "round", "light")),
+    (("geometric collage", "typographic", "modular"), ("sans-black", "sans", "round")),
 ]
+_DEFAULT_FONT_PREFS = ("sans", "serif", "round", "light", "sans-black")
+# 思源双族（黑/宋）才有过硬的拉丁字形；书法/圆体系列的西文撑不起海报
+_LATIN_OK = ("sans", "sans-black", "serif", "light")
 _LATIN_RE = re.compile(r"[A-Za-z0-9]")
 
 
-def _pick_font_style(medium: str, title) -> str:
+def _font_prefs(medium: str, title) -> List[str]:
+    """该媒介下按气质排序的字体候选；拉丁占比高的标题只留思源双族。"""
     m = (medium or "").lower()
-    style = "sans"
-    for keys, s in _MEDIUM_FONT_RULES:
+    prefs = _DEFAULT_FONT_PREFS
+    for keys, p in _MEDIUM_FONT_PREFS:
         if any(k in m for k in keys):
-            style = s
+            prefs = p
             break
-    # 楷/仿宋/幼圆的拉丁字形撑不起海报：拉丁占比高的标题回退到思源双族
-    if style in ("kai", "fangsong", "round") and title:
+    if title:
         t = re.sub(r"\s+", "", str(title))
         if t and sum(1 for ch in t if _LATIN_RE.match(ch)) / len(t) > 0.34:
-            style = "sans" if style == "round" else "serif"
-    return style
+            prefs = [s for s in prefs if s in _LATIN_OK] or ["serif", "sans"]
+    return list(prefs)
 
 
 def assign_variants(requests: List[dict]) -> List[dict]:
-    """同一产品类型内，给每条预分配互不相同的 媒介×色族×构图×字体，强制铺开、防同质。"""
+    """同一产品类型内，给每条预分配互不相同的 媒介×色族×构图，强制铺开、防同质；
+    字体在整批范围内按「候选里用得最少的优先」分配，保证字面也铺开、不塌回黑体。"""
     seen = {}
+    font_used = {}   # 字体全局使用计数（跨产品类型），无标题的请求不占名额
     out = []
     for r in requests:
         r = dict(r)
@@ -217,9 +242,13 @@ def assign_variants(requests: List[dict]) -> List[dict]:
                 "palette": pool["palettes"][j % len(pool["palettes"])],
                 # 构图用错步长(2)，让媒介/色族/构图三轴尽量不对齐
                 "composition": COMPOSITIONS[(j * 2) % len(COMPOSITIONS)],
-                # 后期排版字体（不进模型 payload，出图前会剥掉）
-                "font": _pick_font_style(medium, r.get("title")),
             }
+            if r.get("title"):
+                # 后期排版字体（不进模型 payload，出图前会剥掉）
+                prefs = _font_prefs(medium, r["title"])
+                font = min(prefs, key=lambda s: (font_used.get(s, 0), prefs.index(s)))
+                font_used[font] = font_used.get(font, 0) + 1
+                r["variant"]["font"] = font
         out.append(r)
     return out
 
