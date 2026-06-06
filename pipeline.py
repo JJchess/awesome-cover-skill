@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-全 Gemini 封面生成管线：
-  stage 1  gemini-3.5-flash  扮演 cover-art-director skill，把请求编译成英文出图 prompt
-  stage 2  Nano Banana       把 prompt 渲染成封面（线程池并发出图），本地裁 16:10 存盘
+全 Gemini 封面生成管线（单次模型调用版）：
+  prompt 由本地模板编译——变体三轴（媒介×色族×构图）+ 平台 DNA + 去 AI 味清单，
+  素材固化自 skills/cover-art-director（风格路由/多样引擎本就在本地，隐喻翻译交给
+  图像模型自己的语言理解）；Nano Banana 直接出图，本地裁 16:10，标题真字体后期排版。
 
-一批 N 张封面 = 1 次文本调用（一次产出 N 条 prompt，内部跑多样引擎）+ N 次并发文生图调用
+单张封面 = 1 次模型调用；一批 N 张 = N 次并发文生图，没有文本模型前置调用
 （WORKERS 环境变量控制并发数，默认 6；遇 429 限流可调小）。
 
 用法:
@@ -21,13 +22,11 @@ from typing import Optional, List
 from pydantic import BaseModel
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from google import genai
-from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-TEXT_MODEL = "gemini-3.5-flash"          # 艺术总监：编 prompt
 # Nano Banana 出图。gemini-2.5-flash-image 是经典 Nano Banana，但渲染中文标题会丢字；
 # gemini-3.1-flash-image 同属 flash-image 线、能正确渲染中文。带中文 title 时必须用 3.1。
 IMAGE_MODEL = os.getenv("IMAGE_MODEL", "gemini-3.1-flash-image")
@@ -44,7 +43,6 @@ NO_TEXT_CLAUSE = (
     "anywhere. Keep the reserved title area clean, quiet and empty."
 )
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SKILL_DIR = os.path.join(BASE_DIR, "skills", "cover-art-director")
 # 锚定到脚本目录：从任何 cwd 跑都读写仓库里这份输出（曾因 cwd 漂移把图写去过桌面散件）
 OUT = os.path.join(BASE_DIR, "output_covers_gemini")
 TARGET_RATIO = 16 / 10
@@ -260,58 +258,97 @@ class Cover(BaseModel):
     prompt: str                  # 可直接喂图像模型的英文 prompt（含 avoid 段）
 
 
-def load_skill_system_instruction() -> str:
-    with open(os.path.join(SKILL_DIR, "SKILL.md"), encoding="utf-8") as f:
-        skill = f.read()
-    with open(os.path.join(SKILL_DIR, "references", "style-pools.md"), encoding="utf-8") as f:
-        pools = f.read()
-    return (
-        "你是 cover-art-director skill 本体。严格按下面的方法论和风格池工作：判断产品类型 → "
-        "打开对应风格池 → 把标题/概念翻译成一个具体视觉隐喻（不照搬字面）→ 用多样引擎挑一个不重复的 "
-        "媒介×色族×构图×母题 组合 → 套平台 DNA → 组装成一条可直接喂给文生图模型的英文 prompt。\n"
-        "收到一批请求时，必须让相邻封面至少在媒介和色族上不同（多样引擎）。\n"
-        "【强制变体】若某条请求带 variant 字段（medium/palette/composition），你必须严格照它执行——"
-        "用指定的媒介、只用指定色族里的 2–3 个色、按指定构图，不得塌缩回你偏好的默认媒介。"
-        "即便如此，仍要在平台 DNA 之内进一步变化光照角度、情绪、纹理和视觉隐喻，使同类封面彼此不雷同。\n"
-        "只有当请求带 title 时才把该文字渲染进图（title_text 原样填该文字并在 prompt 里用引号要求 "
-        "spell exactly）；没有 title 则 title_text=null 且 prompt 不渲染任何文字、只留标题安全区。\n"
-        "渲染中文标题时，prompt 里务必注明使用简体中文字形（Simplified Chinese glyphs, 简体, "
-        "not Traditional），避免出现繁体异体字。\n"
-        "【标题质感】标题不能是平涂、像后期贴上去的字幕。要把它当成被精心设计的字体锁定块"
-        "(crafted typographic lockup) 写进 prompt：refined modern sans-serif with deliberate "
-        "weight contrast and optical kerning, confident but not heavy；并给它一种与该封面媒介一致、"
-        "由画面同一光源照亮的材质处理，使标题和画面属于同一个物理世界——纸艺/孔版→压印或凹凸 "
-        "(letterpress deboss / embossed into paper)；蓝图线稿→精细蚀刻/雕刻线 (engraved etched "
-        "lettering)；黏土/3D/等距→轻微挤出的哑光立体字并带一致柔和投影 (subtly extruded matte "
-        "3D type with one consistent soft shadow)；编辑插画/数据可视化→油墨印刷质感带细颗粒 "
-        "(ink-printed type with subtle grain)。标题颜色从该条色板里取一个锚定色或中性深色、与背景"
-        "拉开对比，可有极克制的微立体或细投影。务必强调：effect stays subtle, every stroke crisp "
-        "and perfectly legible, do not distort/warp/over-texture the Chinese characters。\n"
-        "对每个请求产出一个对象：product_type / title_text / spec（一行：类型 · 媒介 · 色族 · 构图原型）/ "
-        "prompt（英文，含浓缩的 avoid 段）。\n\n"
-        "===== SKILL.md =====\n" + skill +
-        "\n\n===== references/style-pools.md =====\n" + pools
-    )
+# ===== 本地 prompt 模板（固化自 skills/cover-art-director，省掉 stage1 文本模型调用）=====
+# 平台 DNA：三类产品共享的成片标准，统一感的来源
+PLATFORM_DNA = (
+    "art-directed, hand-crafted editorial quality; one consistent light source with believable "
+    "shadows; intentional asymmetry; matte finish with subtle film grain; clean geometric "
+    "structure; generous negative space"
+)
+# 去 AI 味清单：Nano Banana 没有独立 negative prompt 字段，排除项写进正文
+AVOID_CLAUSE = (
+    "Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no "
+    "tech-blue-gradient-on-black, no chrome spheres, no robot heads or glowing brains, no "
+    "plastic glossy 3D render, no fake bokeh, no lens flare, no floating UI panels, no centered "
+    "symmetric hero blob, no cluttered composition"
+)
+# 产品类型 → (主语, 调性, 母题池)。调性/母题取自 references/style-pools.md
+TYPE_VIBE = {
+    "云课堂": (
+        "a structured learning course",
+        "warm, calm, inviting and guided — the feeling of being led step by step upward; "
+        "smart but never cold",
+        "winding paths and maps, ascending terraces, constellations of linked concepts, "
+        "reimagined books, building blocks, a guiding light"),
+    "代码实验室": (
+        "a hands-on computational notebook experiment",
+        "precise, experimental, orderly and focused — a design studio meets a science lab; "
+        "cool tones with at most one electric accent, physical and tactile, never a neon tech cliche",
+        "notebook cells, charts and curves sculpted as physical objects, flowing data, grids "
+        "and coordinates, reimagined lab glassware, composable modules"),
+    "互动场景": (
+        "a multi-agent interactive dialogue scene",
+        "lively, collaborative, conversational, energetic with a touch of stage drama — "
+        "brighter and higher-contrast than a course cover, yet harmonized, never garish",
+        "speech bubbles and dialogue shapes, connected figures, networks of roles, masks, "
+        "exchange and flow, stages and division of labor"),
+}
+# product_type 缺省时的关键词路由（SKILL.md 路由表；显式传入永远优先）
+_TYPE_KEYWORDS = (
+    ("代码实验室", ("notebook", "jupyter", "实验", "code", "代码", "数据", "data", "量化",
+                    "pipeline", "kernel", "lab")),
+    ("互动场景", ("agent", "智能体", "协作", "对话", "角色", "讨论", "分工", "roleplay",
+                  "沙盒", "场景", "互动")),
+)
 
 
-def author_prompts(client: genai.Client, requests: List[dict], retries: int = 12) -> List[Cover]:
-    user_payload = "请为以下批次逐条产出封面 prompt（保持顺序，整批在媒介+色族上铺开）：\n" + \
-        json.dumps(requests, ensure_ascii=False, indent=2)
-    cfg = types.GenerateContentConfig(
-        system_instruction=load_skill_system_instruction(),
-        response_mime_type="application/json",
-        response_schema=list[Cover],
-        temperature=1.0,   # 拉开多样性
-    )
-    for attempt in range(retries):
-        try:
-            resp = client.models.generate_content(model=TEXT_MODEL, contents=user_payload, config=cfg)
-            if resp.parsed:
-                return resp.parsed
-            logging.warning("  stage1 空结果，重试 %d", attempt + 1)
-        except Exception as e:
-            logging.warning("  stage1 attempt %d 失败: %s", attempt + 1, e)
-    raise SystemExit("stage 1 多次失败，请重跑")
+def _infer_product_type(r: dict) -> str:
+    text = " ".join(str(r.get(k) or "") for k in ("title", "brief")).lower()
+    for pt, kws in _TYPE_KEYWORDS:
+        if any(k in text for k in kws):
+            return pt
+    return "云课堂"
+
+
+def compile_cover(r: dict, overlay: bool) -> Cover:
+    """本地模板编译出图 prompt——原 stage1 艺术总监做的三件事里，风格路由和多样引擎
+    本就在 assign_variants 完成，隐喻翻译直接交给图像模型的语言理解（中文概念原样喂）。
+    于是单张封面 = 1 次模型调用。"""
+    pt = r.get("product_type") or "云课堂"
+    subject, vibe, motifs = TYPE_VIBE.get(pt) or TYPE_VIBE["云课堂"]
+    pool = POOLS.get(pt) or POOLS["云课堂"]
+    v = r.get("variant") or {}
+    medium = v.get("medium") or pool["media"][0]
+    palette = v.get("palette") or pool["palettes"][0]
+    comp = v.get("composition") or COMPOSITIONS[0]
+    title = (r.get("title") or "").strip()
+    concept = (r.get("brief") or "").strip() or title   # 对齐后端：subtitle 空回退 title
+
+    parts = [f"Editorial-quality cover art for {subject}, art-directed and hand-crafted, "
+             "the work of one confident idea executed seriously."]
+    if concept:
+        parts.append(
+            f"Core concept: “{concept}” — interpret this concept (it may be in Chinese) "
+            "into ONE specific, stunning visual metaphor; never depict it literally and never "
+            f"write the concept as text. Motifs worth drawing on: {motifs}.")
+    else:
+        parts.append(f"Invent ONE specific visual metaphor that expresses {subject}. "
+                     f"Motifs worth drawing on: {motifs}.")
+    parts.append(f"Medium: {medium}.")
+    parts.append(f"Mood: {vibe}.")
+    parts.append(f"Composition: {comp}; 16:10 widescreen; keep the reserved title space clean and calm.")
+    parts.append(f"Palette: only 2-3 anchored hues drawn from {palette}, plus one neutral; "
+                 "restrained and deliberate, never a rainbow.")
+    parts.append(PLATFORM_DNA + ".")
+    if title and not overlay:   # baked 模式才让模型烤字；overlay 由 NO_TEXT_CLAUSE 全面禁字
+        parts.append(
+            f"Integrate the title text \"{title}\" as a deliberate typographic element: a crafted "
+            "typographic lockup, clean modern sans-serif, horizontal, high contrast, perfectly "
+            "legible, placed in the reserved negative space; spell it exactly with no extra words; "
+            "use Simplified Chinese glyphs (简体中文字形, not Traditional); every stroke crisp.")
+    parts.append(AVOID_CLAUSE + ".")
+    spec = " · ".join((pt, medium.split(",")[0], palette, comp.split(",")[0]))
+    return Cover(product_type=pt, title_text=title or None, spec=spec, prompt=" ".join(parts))
 
 
 def _load_font(size: int, spec: dict = None):
@@ -655,29 +692,21 @@ def main():
         with open(sys.argv[1], encoding="utf-8") as f:
             requests = json.load(f)
 
+    # product_type 可省：本地关键词路由（原先由 stage1 文本模型判断）
+    requests = [dict(r) for r in requests]
+    for r in requests:
+        r["product_type"] = r.get("product_type") or _infer_product_type(r)
     requests = assign_variants(requests)
     client = genai.Client(api_key=api_key)
     os.makedirs(OUT, exist_ok=True)
 
     overlay = TITLE_MODE == "overlay"
     logging.info("标题模式: %s", "overlay（后期真字体合成）" if overlay else "baked（模型烤字）")
-
-    # overlay 模式：让模型只出画面+留安全区（不烤字），标题留到后期合成
-    art_requests = requests
     real_titles = [r.get("title") for r in requests]
-    if overlay:
-        art_requests = []
-        for r in requests:
-            rr = dict(r); rr["title"] = None
-            if rr.get("variant"):   # 字体是后期排版的事，别混进给模型的画面指令
-                rr["variant"] = {k: v for k, v in rr["variant"].items() if k != "font"}
-            art_requests.append(rr)
-
-    logging.info("stage 1: %s 编译 %d 条 prompt …", TEXT_MODEL, len(art_requests))
-    covers = author_prompts(client, art_requests)
+    covers = [compile_cover(r, overlay) for r in requests]   # 本地模板编译，0 次文本模型调用
 
     manifest = [None] * len(covers)
-    logging.info("stage 2: %s 并发出图（%d workers）…", IMAGE_MODEL, WORKERS)
+    logging.info("%s 并发出图（%d workers，每张封面 = 1 次模型调用）…", IMAGE_MODEL, WORKERS)
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:
         futs = {}
         for i, c in enumerate(covers):
