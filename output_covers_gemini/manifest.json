@@ -1,26 +1,101 @@
 [
   {
     "index": 1,
-    "product_type": "云课堂",
-    "title_text": "Rust 内存模型深度拆解",
-    "spec": "云课堂 · 层叠纸艺 diorama · 米白+琥珀+墨 · 右主体左留白",
-    "prompt": "Editorial-quality course cover art, art-directed and hand-crafted. A winding path of warm translucent paper-craft steps ascending through structured geometric gates and delicate bridges, a visual metaphor for structured learning of ownership boundaries and lifespans. Layered paper-craft diorama, soft 3D depth, warm daylight from upper-left casting soft shadows, elegant matte finish with fine film grain. Composition: focal elements on the right, clean spacious negative space on the lower-left. Palette: cream, warm amber accents, and deep ink. Integrate the title text \"Rust 内存模型深度拆解\" as a deliberate typographic element: clean modern sans-serif, horizontal, high contrast, placed in the lower-left negative space; spell it exactly, no extra words. 16:10 aspect ratio. Avoid: no neon circuit boards, no tech-blue-on-black, no plastic glossy 3D, no fake bokeh, no floating UI panels, no centered symmetric blob, no garbled text.",
-    "image": "output_covers_gemini\\01_云课堂.png"
+    "product_type": "互动场景",
+    "title_text": "太阳系行星探索",
+    "title_mode": "overlay",
+    "spec": "互动场景 · 抽象角色形体 · 品红+橘+米白 · 左主体右留白",
+    "prompt": "Editorial-quality cover art, art-directed and hand-crafted. Abstract agent-character shapes mid-dialogue, their distinct roles defined by silhouettes, interacting with sweeping curved lines representing planetary orbits and cycles. Composition: subject-left with a generous, clean negative space on the right reserved for a title, 16:10. Matte finish with subtle film grain, single consistent light source casting gentle shadows. Palette: magenta and tangerine, balanced with cream. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\01_互动场景.png"
   },
   {
     "index": 2,
-    "product_type": "代码实验室",
-    "title_text": "金融时间序列与冲击预测",
-    "spec": "代码实验室 · 数据可视化雕塑 · 石板灰+米白+电光蓝 · 对角动势",
-    "prompt": "Editorial-quality cover art for a computational notebook, art-directed and hand-crafted. Elegant data-visualization-as-art: a series of sculpted matte ribbons representing financial time series flowing diagonally across a precise slate-grey grid, featuring a sudden sharp peak symbolizing a forecasted market shock. Clean studio lighting with a single defined source, matte finish with subtle paper-like texture. Composition: dynamic diagonal movement, leaving the top-left corner open and clean for text. Palette: slate-grey, off-white, with a single electric-blue accent line tracing the shock. Integrate the title text \"金融时间序列与冲击预测\" as a deliberate typographic element: clean modern sans-serif, horizontal, high legibility, placed in the top-left negative space; spell it exactly, no extra words. 16:10 aspect ratio. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no plastic glossy 3D, no fake bokeh, no floating UI panels.",
-    "image": "output_covers_gemini\\02_代码实验室.png"
+    "product_type": "互动场景",
+    "title_text": "垃圾分类小游戏",
+    "title_mode": "overlay",
+    "spec": "互动场景 · 节点星座 · 钴蓝+珊瑚+柔黄 · 居中带边距",
+    "prompt": "Editorial-quality cover art, art-directed and hand-crafted. A delicate network constellation of distinct node-as-character shapes linked by clean dialogue lines to represent multi-agent collaboration. Composition: centered with comfortable margins, with clean negative space across the top reserved for a title, 16:10. Studio lighting with one consistent soft source, matte paper texture with fine grain. Palette: cobalt and coral with soft yellow highlights. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\02_互动场景.png"
   },
   {
     "index": 3,
     "product_type": "互动场景",
     "title_text": null,
-    "spec": "互动场景 · 舞台聚光 · 紫罗兰+青+暖光 · 满版场景",
-    "prompt": "Editorial-quality cover art for an interactive agent scenario, art-directed and hand-crafted. A minimalist theatrical stage with three distinct abstract geometric figures positioned in a circle under soft warm spotlights, exchanging geometric data fragments and dialogue lines — a metaphor for multi-agent market research and division of tasks. Soft dramatic lighting with long shadows, matte textured finish with fine film grain, intentional asymmetry. Composition: off-center staging with a generous clean negative space on the left reserved for title safety. Palette: deep violet, teal, and warm spotlight glow. No text or typography is present. 16:10 aspect ratio. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no floating UI panels, no garbled text.",
+    "title_mode": "overlay",
+    "spec": "互动场景 · 舞台聚光 · 紫罗兰+青+暖光 · 三联画网格",
+    "prompt": "Editorial-quality cover art, art-directed and hand-crafted. A theatrical staging with warm spotlights, each abstract agent positioned in its own distinct pool of light. Composition: a balanced grid triptych of three distinct panels, 16:10. Clear directional lighting, matte finish with tactile grain. Palette: violet and teal, illuminated by soft warm light. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
     "image": "output_covers_gemini\\03_互动场景.png"
+  },
+  {
+    "index": 4,
+    "product_type": "互动场景",
+    "title_text": "「从零到一」打造你的专属 AI 学习助手 🤖：涵盖意图识别、多轮对话管理、知识库检索增强（RAG）与外部工具调用的全栈实战训练营——零基础也能跟上的 12 周陪跑计划\n（第二期）",
+    "title_mode": "overlay",
+    "spec": "互动场景 · 几何拼贴 · 祖母绿+梅子紫+暖白 · 俯视平铺",
+    "prompt": "Editorial-quality cover art, art-directed and hand-crafted. A bold geometric collage of speech forms and connected figures representing a collaborative workflow from breakdown to deployment. Composition: top-down flat-lay arrangement with clean, breathing room for a title, 16:10. Soft diffused overhead lighting, matte paper cutout texture with fine organic grain. Palette: emerald green and rich plum on an off-white background. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\04_互动场景.png"
+  },
+  {
+    "index": 5,
+    "product_type": "代码实验室",
+    "title_text": "金融时间序列与冲击预测",
+    "title_mode": "overlay",
+    "spec": "代码实验室 · 数据可视化雕塑 · 石板灰+暖白+电光蓝 · 左主体右留白",
+    "prompt": "Editorial-quality cover art for a computational notebook, art-directed and hand-crafted. Elegant data-visualization-as-art featuring return curves and stationarity charts sculpted as physical 3D objects resting on a subtle grid. Composition: subject-left with a clean, generous negative space on the right reserved for a title, 16:10. Clean directional studio light, matte finish with subtle grain. Palette: slate and off-white with an electric-blue accent. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\05_代码实验室.png"
+  },
+  {
+    "index": 6,
+    "product_type": "代码实验室",
+    "title_text": "Web 代码沙盒实验",
+    "title_mode": "overlay",
+    "spec": "代码实验室 · 等距工作台 · 墨蓝+纸色+青柠 · 居中带边距",
+    "prompt": "Editorial-quality cover art for a computational notebook, art-directed and hand-crafted. An isometric workspace desk scene depicting a minimalist, physical code editor environment with modular blocks and a notebook, clean and tactile. Composition: centered with comfortable margins, leaving clear space across the top for a title, 16:10. Soft directional light from the left, matte texture with fine paper grain. Palette: deep ink navy and crisp paper with a sharp lime accent. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\06_代码实验室.png"
+  },
+  {
+    "index": 7,
+    "product_type": "代码实验室",
+    "title_text": "做一个贪吃蛇小游戏",
+    "title_mode": "overlay",
+    "spec": "代码实验室 · 蓝图线稿 · 石墨+暖白+信号橙 · 三联画网格",
+    "prompt": "Editorial-quality cover art for a computational notebook, art-directed and hand-crafted. Precise blueprint and schematic linework tracing complex logical steps, flows, and system architectures. Composition: a balanced grid triptych of three distinct panels, 16:10. Clean draft exposure, matte finish with subtle blueprint paper texture. Palette: graphite and warm white with sharp signal-orange accents. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\07_代码实验室.png"
+  },
+  {
+    "index": 8,
+    "product_type": "代码实验室",
+    "title_text": "Untitled lab",
+    "title_mode": "overlay",
+    "spec": "代码实验室 · 材质微距 · 深青+纸色+品红 · 俯视平铺",
+    "prompt": "Editorial-quality cover art for a computational notebook, art-directed and hand-crafted. A close macro study capturing the texture of premium paper, fine technical grid lines, and physical ink seeping into the fibers. Composition: top-down flat-lay arrangement, clean and geometric with generous breathing room, 16:10. Raking light highlighting paper grain, matte tactile finish. Palette: deep teal and natural paper with a single sharp magenta spark. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\08_代码实验室.png"
+  },
+  {
+    "index": 9,
+    "product_type": "云课堂",
+    "title_text": "机器学习导论",
+    "title_mode": "overlay",
+    "spec": "云课堂 · 编辑插画 · 米白+琥珀+墨 · 左主体右留白",
+    "prompt": "Editorial-quality course cover art, art-directed and hand-crafted. Modern editorial illustration visualizing a progression from a simple regression line into an interconnected neural network. Composition: subject-left with a clean, wide negative space on the right reserved for a title, 16:10. Flat graphics with visible paper grain and rich printed texture, lit from a single soft source. Palette: cream and warm amber, accented with deep ink. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\09_云课堂.png"
+  },
+  {
+    "index": 10,
+    "product_type": "云课堂",
+    "title_text": "高等数学(上)",
+    "title_mode": "overlay",
+    "spec": "云课堂 · 层叠纸艺 · 鼠尾草绿+暖白+陶土橙 · 居中带边距",
+    "prompt": "Editorial-quality course cover art, art-directed and hand-crafted. A beautiful layered paper-craft diorama showing a smooth winding curve and slicing bars representing calculus limits and integrals. Composition: centered with comfortable margins, leaving clear negative space across the top for a title, 16:10. Soft 3D cut-paper layers with tactile felt-like texture, illuminated by a warm light source from the upper-left casting soft shadows. Palette: sage green and warm white with terracotta accents. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\10_云课堂.png"
+  },
+  {
+    "index": 11,
+    "product_type": "云课堂",
+    "title_text": "Python 数据分析入门",
+    "title_mode": "overlay",
+    "spec": "云课堂 · 等距结构 · 雾霾蓝+沙色+珊瑚 · 三联画网格",
+    "prompt": "Editorial-quality course cover art, art-directed and hand-crafted. An isometric structured scene of ascending platforms, geometric terraces, and step-like structures representing a learning journey. Composition: a balanced grid triptych of three distinct panels showing progressive heights, 16:10. Soft clean daylight casting consistent realistic shadows, matte finish with subtle grain. Palette: dusty blue and sand with warm coral accents. Avoid: no glowing neon circuit boards, no hexagon grids, no matrix code rain, no tech-blue-gradient-on-black, no chrome spheres, no robot heads, no plastic glossy 3D, no fake bokeh, no lens flare, no floating UI panels, no centered symmetric blob, no cluttered composition, no text.",
+    "image": "output_covers_gemini\\11_云课堂.png"
   }
 ]

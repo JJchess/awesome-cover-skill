@@ -20,7 +20,9 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "🚀 正在推送到远程仓库..."
-git push
+# 获取当前分支名
+CURRENT_BRANCH=$(git branch --show-current)
+git push -u origin "$CURRENT_BRANCH"
 
 if [ $? -eq 0 ]; then
   echo "✅ 推送成功!"
