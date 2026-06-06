@@ -14,7 +14,7 @@ requests.json 形如:
   [{"product_type":"云课堂","title":"Rust 内存模型深度拆解","brief":"所有权、生命周期与无畏并发"},
    {"title":"金融时间序列与冲击预测","brief":"用 notebook 跑量化实验"}]   # product_type 可省，由关键词推断
 """
-import os, sys, json, base64, logging, time
+import os, sys, json, base64, logging, time, re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
 from typing import Optional, List
@@ -45,16 +45,30 @@ NO_TEXT_CLAUSE = (
 )
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SKILL_DIR = os.path.join(BASE_DIR, "skills", "cover-art-director")
-OUT = "output_covers_gemini"
+# 锚定到脚本目录：从任何 cwd 跑都读写仓库里这份输出（曾因 cwd 漂移把图写去过桌面散件）
+OUT = os.path.join(BASE_DIR, "output_covers_gemini")
 TARGET_RATIO = 16 / 10
 
-# 后期排版用的高质量中文字体（按优先级回退）
-FONT_CANDIDATES = [
-    "C:/Windows/Fonts/NotoSansSC-VF.ttf",   # 思源黑体（可变字重，首选）
-    "C:/Windows/Fonts/msyhbd.ttc",          # 微软雅黑 Bold
-    "C:/Windows/Fonts/simhei.ttf",          # 黑体
-    "C:/Windows/Fonts/Dengb.ttf",           # 等线 Bold
-]
+# 后期排版字体库：每种风格一条回退链。多样化的同时保质感——
+# 思源黑/宋（可变字重）扛拉丁与重权重；华文楷体/仿宋/幼圆给中文标题加气质，
+# 但原始字重撑不起海报字号，用 stroke（按字号比例的描边）做轻微加粗。
+# axes = 可变字体 wght 轴；track = 字距系数；stroke = 描边宽度系数（0 = 不描）。
+FONT_STYLES = {
+    "sans": {"label": "现代黑体", "axes": [640], "track": 0.06, "stroke": 0,
+             "paths": ["C:/Windows/Fonts/NotoSansSC-VF.ttf", "C:/Windows/Fonts/msyhbd.ttc",
+                       "C:/Windows/Fonts/simhei.ttf", "C:/Windows/Fonts/Dengb.ttf"]},
+    "sans-black": {"label": "重磅黑体", "axes": [860], "track": 0.04, "stroke": 0,
+             "paths": ["C:/Windows/Fonts/NotoSansSC-VF.ttf", "C:/Windows/Fonts/simhei.ttf"]},
+    "serif": {"label": "思源宋体", "axes": [780], "track": 0.035, "stroke": 0,
+             "paths": ["C:/Windows/Fonts/NotoSerifSC-VF.ttf", "C:/Windows/Fonts/STZHONGS.TTF",
+                       "C:/Windows/Fonts/simsun.ttc"]},
+    "kai": {"label": "华文楷体", "axes": None, "track": 0.045, "stroke": 0.028,
+            "paths": ["C:/Windows/Fonts/STKAITI.TTF", "C:/Windows/Fonts/simkai.ttf"]},
+    "round": {"label": "幼圆", "axes": None, "track": 0.055, "stroke": 0.016,
+              "paths": ["C:/Windows/Fonts/SIMYOU.TTF", "C:/Windows/Fonts/msyh.ttc"]},
+    "fangsong": {"label": "华文仿宋", "axes": None, "track": 0.08, "stroke": 0.034,
+                 "paths": ["C:/Windows/Fonts/STFANGSO.TTF", "C:/Windows/Fonts/simfang.ttf"]},
+}
 
 # 内置用例对齐 cover-generation-test-cases.md §2 中影响出图输入的 case。
 # 后端 build_prompt() 只消费 title/subtitle 两个字段，这里 brief ≈ subtitle；
@@ -158,8 +172,36 @@ COMPOSITIONS = [
 ]
 
 
+# 媒介关键词 → 字体风格（顺序即优先级）：让字形气质跟画面媒介属于同一个世界——
+# 编辑插画/印刷/剧场感→宋体；纸艺/手绘批注/动势→楷体；黏土/角色剪影/玩趣→圆体；
+# 蓝图制图→仿宋（工程图纸标准字）；几何拼贴/字体海报→重磅黑体；其余→现代黑体。
+_MEDIUM_FONT_RULES = [
+    (("editorial", "risograph", "macro", "material", "theatrical", "spotlight"), "serif"),
+    (("paper-craft", "hand-annotated", "sketched", "motion"), "kai"),
+    (("clay", "silhouette", "playful"), "round"),
+    (("blueprint", "schematic"), "fangsong"),
+    (("geometric collage", "typographic"), "sans-black"),
+]
+_LATIN_RE = re.compile(r"[A-Za-z0-9]")
+
+
+def _pick_font_style(medium: str, title) -> str:
+    m = (medium or "").lower()
+    style = "sans"
+    for keys, s in _MEDIUM_FONT_RULES:
+        if any(k in m for k in keys):
+            style = s
+            break
+    # 楷/仿宋/幼圆的拉丁字形撑不起海报：拉丁占比高的标题回退到思源双族
+    if style in ("kai", "fangsong", "round") and title:
+        t = re.sub(r"\s+", "", str(title))
+        if t and sum(1 for ch in t if _LATIN_RE.match(ch)) / len(t) > 0.34:
+            style = "sans" if style == "round" else "serif"
+    return style
+
+
 def assign_variants(requests: List[dict]) -> List[dict]:
-    """同一产品类型内，给每条预分配互不相同的 媒介×色族×构图，强制铺开、防同质。"""
+    """同一产品类型内，给每条预分配互不相同的 媒介×色族×构图×字体，强制铺开、防同质。"""
     seen = {}
     out = []
     for r in requests:
@@ -169,11 +211,14 @@ def assign_variants(requests: List[dict]) -> List[dict]:
         if pool:
             j = seen.get(pt, 0)
             seen[pt] = j + 1
+            medium = pool["media"][j % len(pool["media"])]
             r["variant"] = {
-                "medium": pool["media"][j % len(pool["media"])],
+                "medium": medium,
                 "palette": pool["palettes"][j % len(pool["palettes"])],
                 # 构图用错步长(2)，让媒介/色族/构图三轴尽量不对齐
                 "composition": COMPOSITIONS[(j * 2) % len(COMPOSITIONS)],
+                # 后期排版字体（不进模型 payload，出图前会剥掉）
+                "font": _pick_font_style(medium, r.get("title")),
             }
         out.append(r)
     return out
@@ -240,14 +285,16 @@ def author_prompts(client: genai.Client, requests: List[dict], retries: int = 12
     raise SystemExit("stage 1 多次失败，请重跑")
 
 
-def _load_font(size: int):
-    for path in FONT_CANDIDATES:
+def _load_font(size: int, spec: dict = None):
+    spec = spec or FONT_STYLES["sans"]
+    for path in spec["paths"]:
         if os.path.exists(path):
             font = ImageFont.truetype(path, size)
-            try:  # 思源黑体是可变字重，拉到 SemiBold/Bold 更有分量
-                font.set_variation_by_axes([640])
-            except Exception:
-                pass
+            if spec.get("axes"):
+                try:  # 可变字体拉字重轴（思源黑/宋），非可变字库直接跳过
+                    font.set_variation_by_axes(spec["axes"])
+                except Exception:
+                    pass
             return font
     return ImageFont.load_default()
 
@@ -275,19 +322,132 @@ def _region_rect(W, H, zone):
     return (m, int(H * 0.66), int(W * 0.70), H - m)  # lowerleft
 
 
-def _fit_font(text, max_w, max_h, tracking_ratio=0.06):
-    """在区域内自适应字号；返回 (font, size, 每字宽列表, 字距像素)。"""
-    for size in range(max(28, max_h), 24, -2):
-        font = _load_font(size)
-        track = int(size * tracking_ratio)
-        widths = [font.getbbox(ch)[2] - font.getbbox(ch)[0] for ch in text]
-        total = sum(widths) + track * (len(text) - 1)
+_EMOJI_RANGES = (
+    (0x1F000, 0x1FAFF),  # emoji 主区（含 🤖）
+    (0x2600, 0x27BF),    # 杂项符号与装饰符
+    (0x2300, 0x23FF),    # 技术符号（⌚⏰ 等）
+    (0x2B00, 0x2BFF),
+    (0xFE00, 0xFE0F),    # 变体选择符
+    (0x200D, 0x200D),    # 零宽连接符
+)
+
+
+def _clean_title(text: str) -> str:
+    """标题字库（思源黑/宋、华文楷/仿宋、幼圆）都没有 emoji 字形，画出来是方框——剔除并收紧空格。"""
+    s = "".join(ch for ch in text
+                if not any(a <= ord(ch) <= b for a, b in _EMOJI_RANGES))
+    s = re.sub(r"[ \t]{2,}", " ", s)
+    s = re.sub(r" +(?=[：、。，！？；）])", "", s)   # 剔除 emoji 后残留在全角标点前的空格
+    s = re.sub(r" ?\n ?", "\n", s)
+    return s.strip()
+
+
+def _compress_steps(text: str) -> List[str]:
+    """标题自适应压缩候选（保真度降序）：全文 → 去掉换行尾巴 → 强分隔符前的主标题
+    → 逗号前段。封面是海报不是说明书：排不下时宁可只放主标题，也不把长文挤成小字。"""
+    steps = [text]
+    para = text.split("\n", 1)[0].strip()
+    if para and para not in steps:
+        steps.append(para)                      # 丢掉硬换行后的尾巴（如“（第二期）”）
+    head = re.split(r"\s*(?:：|:|——|—|\||｜|·)\s*", para, maxsplit=1)[0].strip()
+    if head and head not in steps:
+        steps.append(head)                      # 只留主标题
+    if len(head) > 24:
+        head2 = re.split(r"[，,、；;。]", head, maxsplit=1)[0].strip()
+        if head2 and head2 not in steps:
+            steps.append(head2)                 # 主标题仍太长，再砍到第一个逗号
+    return steps
+
+
+def _line_w(font, track: int, line: str) -> float:
+    if not line:
+        return 0.0
+    return sum(font.getlength(ch) for ch in line) + track * (len(line) - 1)
+
+
+_NO_LINE_HEAD = "、。，．！？：；…—·）」』】〉》,.!?:;)]}"   # 避头：不出现在行首
+_NO_LINE_TAIL = "（「『【〈《([{"                              # 避尾：不留在行尾
+
+
+def _wrap_lines(text: str, font, track: int, max_w: float) -> List[str]:
+    """按字符贪心折行（CJK 可任意断），带简易避头尾；\\n 视为硬换行。"""
+    lines = []
+    for para in text.split("\n"):
+        para = para.strip()
+        if not para:
+            continue
+        cur, cur_w = "", 0.0
+        for ch in para:
+            w = font.getlength(ch)
+            add = w if not cur else w + track
+            if cur and cur_w + add > max_w:
+                if ch in _NO_LINE_HEAD:          # 闭合标点黏回上一行，宁可微超宽
+                    lines.append(cur + ch)
+                    cur, cur_w = "", 0.0
+                    continue
+                if cur[-1] in _NO_LINE_TAIL:     # 行尾开括号挪到下一行
+                    carry = cur[-1]
+                    lines.append(cur[:-1])
+                    cur = carry + ch
+                    cur_w = font.getlength(carry) + track + w
+                    continue
+                lines.append(cur)
+                cur, cur_w = ch, w
+            else:
+                cur, cur_w = cur + ch, cur_w + add
+        if cur:
+            lines.append(cur)
+    return lines
+
+
+def _layout_title(text: str, max_w: float, max_block_h: int, size_cap: int = 0,
+                  spec: dict = None):
+    """多行自适应排版：自上而下扫字号，按行数各记录能用的最大字号，
+    再按「有效字号（封顶 size_cap）足够大时行数越少越好」选方案——
+    短标题保持单行大字，长标题才折行；最小字号仍放不下时按行截断、末行补 '…'。
+    返回 (font, size, lines, track, line_h, gap, truncated)，text 为空返回 None。"""
+    spec = spec or FONT_STYLES["sans"]
+    upper = max(28, max_block_h)
+    cap = size_cap or upper
+    cands = {}      # 行数 -> 该行数下最大可用字号的布局
+    fallback = None
+    for size in range(upper, 25, -2):
+        font = _load_font(size, spec)
+        track = int(size * spec["track"])
+        lines = _wrap_lines(text, font, track, max_w)
+        if not lines:
+            return None
         bb = font.getbbox("国Ag")
         line_h = bb[3] - bb[1]
-        if total <= max_w and line_h <= max_h:
-            return font, size, track, line_h
-    font = _load_font(28)
-    return font, 28, 2, font.getbbox("国")[3]
+        gap = int(line_h * 0.22)
+        block_h = len(lines) * line_h + (len(lines) - 1) * gap
+        widest = max(_line_w(font, track, ln) for ln in lines)
+        if widest <= max_w * 1.02 and block_h <= max_block_h:
+            cands.setdefault(len(lines), (font, size, lines, track, line_h, gap))
+            if len(lines) == 1:
+                break       # 字号再小行数只会不变或更差
+        else:
+            fallback = (font, size, lines, track, line_h, gap)
+    if cands:
+        # 行数更少的方案只要有效字号不低于最优的 60% 就优先——
+        # 字符级折行没有词感，宁可单行小一点也别在词中间断行。
+        # 另加绝对豁免：字号本身够体面（≥55% 封顶值）的少行方案直接合格，
+        # 防止行高紧凑的字库（如幼圆）用虚高的多行字号把单行挤掉。
+        best_eff = max(min(c[1], cap) for c in cands.values())
+        n = min(k for k, c in cands.items()
+                if min(c[1], cap) >= min(best_eff * 0.6, cap * 0.55))
+        font, size, lines, track, line_h, gap = cands[n]
+        return font, size, lines, track, line_h, gap, False
+    font, size, lines, track, line_h, gap = fallback
+    keep = max(1, int((max_block_h + gap) // (line_h + gap)))
+    truncated = keep < len(lines)
+    if truncated:
+        lines = lines[:keep]
+        last = lines[-1]
+        while last and _line_w(font, track, last + "…") > max_w:
+            last = last[:-1]
+        lines[-1] = last + "…"
+    return font, size, lines, track, line_h, gap, truncated
 
 
 def _luma_stats(img, rect):
@@ -299,23 +459,54 @@ def _luma_stats(img, rect):
     return mean, std
 
 
-def draw_title_overlay(img: Image.Image, text: str, composition: str) -> Image.Image:
-    """把标题用真字体排进预留安全区：自动对比、字间距、压印式细投影——质感来自这里。"""
+def draw_title_overlay(img: Image.Image, text: str, composition: str,
+                       font_style: str = "sans") -> Image.Image:
+    """把标题用真字体排进预留安全区：多行自适应折行、自动对比、字距、压印式细投影。
+    font_style 取 FONT_STYLES 的键，由媒介气质决定（见 _pick_font_style）。"""
     img = img.convert("RGB")
     W, H = img.size
+    text = _clean_title(text)
+    if not text:
+        return img
+    spec = FONT_STYLES.get(font_style) or FONT_STYLES["sans"]
     zone, align = _zone_from_composition(composition)
     rx0, ry0, rx1, ry1 = _region_rect(W, H, zone)
     max_w, max_h = rx1 - rx0, ry1 - ry0
-    font, size, track, line_h = _fit_font(text, max_w, int(max_h * 0.8))
+    size_cap = int(H * 0.16)
+    size_floor = int(H * 0.05)                      # 低于这个字号就不体面了 → 压缩文案
+    lines_cap = 2 if zone in ("top", "bottom") else 3
+    block_h = int(max_h * 0.85)
+    chosen, layout = text, None
+    for cand in _compress_steps(text):
+        lay = _layout_title(cand, max_w, block_h, size_cap=size_cap, spec=spec)
+        if lay is None:
+            return img
+        if not lay[6] and lay[1] >= size_floor and len(lay[2]) <= lines_cap:
+            chosen, layout = cand, lay
+            break
+    if layout is None:
+        # 压到只剩主标题仍放不下：在 floor 字号下硬截 + …
+        chosen = _compress_steps(text)[-1]
+        font = _load_font(size_floor, spec)
+        track = int(size_floor * spec["track"])
+        wrapped = _wrap_lines(chosen, font, track, max_w)[:lines_cap]
+        last = wrapped[-1]
+        while last and _line_w(font, track, last + "…") > max_w:
+            last = last[:-1]
+        wrapped[-1] = last + "…"
+        bb = font.getbbox("国Ag")
+        lh = bb[3] - bb[1]
+        layout = (font, size_floor, wrapped, track, lh, int(lh * 0.22), True)
+    font, size, lines, track, line_h, gap, truncated = layout
+    stroke_w = int(size * spec["stroke"])   # 细笔画字库（楷/仿宋/幼圆）轻微加粗
+    if chosen != text or truncated:
+        logging.info("  标题自适应压缩: %r → %s", text, " / ".join(lines))
 
-    widths = [font.getbbox(ch)[2] - font.getbbox(ch)[0] for ch in text]
-    text_w = sum(widths) + track * (len(text) - 1)
-
-    if align == "center":
-        x = rx0 + (max_w - text_w) // 2
-    else:
-        x = rx0
-    y = ry0 + (max_h - line_h) // 2
+    line_ws = [_line_w(font, track, ln) for ln in lines]
+    block_w = max(line_ws)
+    block_h = len(lines) * line_h + (len(lines) - 1) * gap
+    xs = [rx0 + (max_w - lw) // 2 if align == "center" else rx0 for lw in line_ws]
+    by0 = ry0 + (max_h - block_h) // 2
 
     # 自动对比：安全区偏暗→米白字，偏亮→近黑墨字
     luma, std = _luma_stats(img, (rx0, ry0, rx1, ry1))
@@ -328,11 +519,14 @@ def draw_title_overlay(img: Image.Image, text: str, composition: str) -> Image.I
         emboss = (255, 255, 255, 110) # 上提亮边（压印高光）
         shadow = (0, 0, 0, 55)
 
-    # 背景在安全区偏花/对比不足时，垫一层羽化柔光底，保证标题永远读得清（非 UI 方框）
+    # 背景在安全区偏花/对比不足时，只在文字块范围垫一层羽化柔光底（不横贯全图）
     contrast = abs(main[0] - luma)
     if std > 40 or contrast < 95:
         pad_x, pad_y = int(size * 0.55), int(size * 0.4)
-        bx = (x - pad_x, y - pad_y, x + text_w + pad_x, y + line_h + pad_y)
+        x_min = min(xs)
+        x_max = max(x + w for x, w in zip(xs, line_ws))
+        bx = (int(x_min - pad_x), int(by0 - pad_y),
+              int(x_max + pad_x), int(by0 + block_h + pad_y))
         scol = (0, 0, 0, 130) if main[0] > 120 else (248, 246, 240, 165)
         scrim = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         ImageDraw.Draw(scrim).rounded_rectangle(bx, radius=int(size * 0.6), fill=scol)
@@ -340,28 +534,27 @@ def draw_title_overlay(img: Image.Image, text: str, composition: str) -> Image.I
         img = Image.alpha_composite(img.convert("RGBA"), scrim).convert("RGB")
 
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
 
-    def _draw(dx, dy, color):
-        cx = x + dx
-        for ch, w in zip(text, widths):
-            d.text((cx, y + dy), ch, font=font, fill=color)
-            cx += w + track
+    def _draw_block(target: Image.Image, dx: float, dy: float, color):
+        d = ImageDraw.Draw(target)
+        y = by0 + dy
+        for ln, lx in zip(lines, xs):
+            cx = lx + dx
+            for ch in ln:
+                d.text((cx, y), ch, font=font, fill=color,
+                       stroke_width=stroke_w, stroke_fill=color)
+                cx += font.getlength(ch) + track
+            y += line_h + gap
 
     # 1) 柔投影（光来自左上，投影落右下）→ 让字脱离背景、有体积
     sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ds = ImageDraw.Draw(sh)
-    cx = x
-    for ch, w in zip(text, widths):
-        ds.text((cx + int(size * 0.05), y + int(size * 0.06)), ch, font=font, fill=shadow)
-        cx += w + track
+    _draw_block(sh, int(size * 0.05), int(size * 0.06), shadow)
     sh = sh.filter(ImageFilter.GaussianBlur(max(1, size // 24)))
     layer = Image.alpha_composite(layer, sh)
-    d = ImageDraw.Draw(layer)
     # 2) 压印高光/暗边（与光源一致的 1px 偏移）→ letterpress 质感
-    _draw(-1, -1, emboss)
+    _draw_block(layer, -1, -1, emboss)
     # 3) 主字面
-    _draw(0, 0, main)
+    _draw_block(layer, 0, 0, main)
 
     out = Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
     return out
@@ -401,16 +594,16 @@ def render(client: genai.Client, prompt: str, retries: int = 3):
 
 
 def process_one(client: genai.Client, i: int, c: Cover, title: Optional[str],
-                composition: str, overlay: bool) -> dict:
+                composition: str, font_style: str, overlay: bool) -> dict:
     """单条封面：出图 →（overlay 时）后期排版标题 → 存盘。供线程池并发调用。"""
     name = f"{i+1:02d}_{c.product_type}"
     path = os.path.join(OUT, f"{name}.png")
     prompt = c.prompt + NO_TEXT_CLAUSE if overlay else c.prompt
     img = render(client, prompt)
     if img is not None and overlay and title:
-        img.save(os.path.join(OUT, "_art", f"{name}.png"))   # 留存无字底图，方便只改排版重跑
-        img = draw_title_overlay(img, title, composition)
-        logging.info("  ✎ [%d] 后期排版标题: %s", i + 1, title)
+        img = draw_title_overlay(img, title, composition, font_style)
+        flabel = (FONT_STYLES.get(font_style) or FONT_STYLES["sans"])["label"]
+        logging.info("  ✎ [%d] 后期排版标题（%s）: %s", i + 1, flabel, title)
     if img is not None:
         img.save(path)
         logging.info("  ✅ [%d] %s (%dx%d)", i + 1, path, *img.size)
@@ -418,8 +611,10 @@ def process_one(client: genai.Client, i: int, c: Cover, title: Optional[str],
         logging.error("  ❌ [%d] %s 出图失败", i + 1, name)
     return {"index": i + 1, "product_type": c.product_type,
             "title_text": title if overlay else c.title_text,
-            "title_mode": TITLE_MODE, "spec": c.spec,
-            "prompt": c.prompt, "image": path if img is not None else None}
+            "title_mode": TITLE_MODE, "spec": c.spec, "composition": composition,
+            "font": font_style, "prompt": c.prompt,
+            # manifest 里存相对路径，保持跨机器可读、git diff 干净
+            "image": os.path.relpath(path, BASE_DIR) if img is not None else None}
 
 
 def main():
@@ -445,22 +640,23 @@ def main():
         art_requests = []
         for r in requests:
             rr = dict(r); rr["title"] = None
+            if rr.get("variant"):   # 字体是后期排版的事，别混进给模型的画面指令
+                rr["variant"] = {k: v for k, v in rr["variant"].items() if k != "font"}
             art_requests.append(rr)
 
     logging.info("stage 1: %s 编译 %d 条 prompt …", TEXT_MODEL, len(art_requests))
     covers = author_prompts(client, art_requests)
 
     manifest = [None] * len(covers)
-    if overlay:
-        os.makedirs(os.path.join(OUT, "_art"), exist_ok=True)
     logging.info("stage 2: %s 并发出图（%d workers）…", IMAGE_MODEL, WORKERS)
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:
         futs = {}
         for i, c in enumerate(covers):
             logging.info("[%d] %s", i + 1, c.spec)
             title = real_titles[i] if i < len(real_titles) else None
-            comp = (requests[i].get("variant") or {}).get("composition", "") if i < len(requests) else ""
-            futs[pool.submit(process_one, client, i, c, title, comp, overlay)] = i
+            variant = (requests[i].get("variant") or {}) if i < len(requests) else {}
+            comp, fstyle = variant.get("composition", ""), variant.get("font", "sans")
+            futs[pool.submit(process_one, client, i, c, title, comp, fstyle, overlay)] = i
         for fut in as_completed(futs):
             i = futs[fut]
             try:
@@ -469,9 +665,11 @@ def main():
                 logging.error("  ❌ [%d] 异常: %s", i + 1, e)
                 c = covers[i]
                 title = real_titles[i] if i < len(real_titles) else None
+                variant = (requests[i].get("variant") or {}) if i < len(requests) else {}
                 manifest[i] = {"index": i + 1, "product_type": c.product_type,
                                "title_text": title if overlay else c.title_text,
                                "title_mode": TITLE_MODE, "spec": c.spec,
+                               "font": variant.get("font", "sans"),
                                "prompt": c.prompt, "image": None}
 
     with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as f:
