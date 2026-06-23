@@ -17,9 +17,9 @@ requests.json 形如:
 """
 import os, sys, json, base64, logging, time, re
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from io import BytesIO
 from typing import Optional, List
-from pydantic import BaseModel
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from google import genai
 from dotenv import load_dotenv
@@ -27,16 +27,12 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-# Nano Banana 出图。gemini-2.5-flash-image 是经典 Nano Banana，但渲染中文标题会丢字；
-# gemini-3.1-flash-image 同属 flash-image 线、能正确渲染中文。带中文 title 时必须用 3.1。
+# Nano Banana 出图（标题不靠模型烤字，但 3.1 对中文概念的理解与构图执行更稳）
 IMAGE_MODEL = os.getenv("IMAGE_MODEL", "gemini-3.1-flash-image")
-# 标题模式：overlay = 模型只出画面+留安全区，标题用真字体后期合成（默认，质感最稳）；
-#           baked   = 让模型把标题直接烤进图里（旧行为，CJK 偶尔糊字/繁体）。
-TITLE_MODE = os.getenv("TITLE_MODE", "overlay")
-# stage 2 出图并发数（线程池）。出图是纯 I/O 等待，并发可线性提速；遇 429 限流就调小。
+# 出图并发数（线程池）。出图是纯 I/O 等待，并发可线性提速；遇 429 限流就调小。
 WORKERS = max(1, int(os.getenv("WORKERS", "6")))
-# overlay 模式下硬性禁止模型烤任何文字（notebook/蓝图/编辑类媒介最爱自己加英文标签），
-# 标题完全交给后期真字体合成。
+# 硬性禁止模型烤任何文字（notebook/蓝图/编辑类媒介最爱自己加英文标签），
+# 标题一律由后期真字体排版合成。
 NO_TEXT_CLAUSE = (
     " ABSOLUTELY NO text of any kind in the image: no letters, no words, no numbers, no "
     "captions, no titles, no headings, no labels, no axis ticks text, no UI, no typography "
@@ -242,7 +238,7 @@ def assign_variants(requests: List[dict]) -> List[dict]:
                 "composition": COMPOSITIONS[(j * 2) % len(COMPOSITIONS)],
             }
             if r.get("title"):
-                # 后期排版字体（不进模型 payload，出图前会剥掉）
+                # 后期排版字体（compile_cover 不会把它写进出图 prompt）
                 prefs = _font_prefs(medium, r["title"])
                 font = min(prefs, key=lambda s: (font_used.get(s, 0), prefs.index(s)))
                 font_used[font] = font_used.get(font, 0) + 1
@@ -251,11 +247,11 @@ def assign_variants(requests: List[dict]) -> List[dict]:
     return out
 
 
-class Cover(BaseModel):
-    product_type: str            # 路由判定的产品类型
-    title_text: Optional[str]    # 实际要渲染进图的文字；无则 null
-    spec: str                    # 一行规格: 类型 · 媒介 · 色族 · 构图原型
-    prompt: str                  # 可直接喂图像模型的英文 prompt（含 avoid 段）
+@dataclass
+class Cover:
+    product_type: str   # 产品类型（显式传入或关键词路由）
+    spec: str           # 一行规格: 类型 · 媒介 · 色族 · 构图原型
+    prompt: str         # 可直接喂图像模型的英文 prompt（含禁字与 avoid 段）
 
 
 # ===== 本地 prompt 模板（固化自 skills/cover-art-director，省掉 stage1 文本模型调用）=====
@@ -310,10 +306,9 @@ def _infer_product_type(r: dict) -> str:
     return "云课堂"
 
 
-def compile_cover(r: dict, overlay: bool) -> Cover:
-    """本地模板编译出图 prompt——原 stage1 艺术总监做的三件事里，风格路由和多样引擎
-    本就在 assign_variants 完成，隐喻翻译直接交给图像模型的语言理解（中文概念原样喂）。
-    于是单张封面 = 1 次模型调用。"""
+def compile_cover(r: dict) -> Cover:
+    """本地模板编译出图 prompt：风格路由/多样引擎在 assign_variants 完成，
+    隐喻翻译交给图像模型的语言理解（中文概念原样喂）——单张封面 = 1 次模型调用。"""
     pt = r.get("product_type") or "云课堂"
     subject, vibe, motifs = TYPE_VIBE.get(pt) or TYPE_VIBE["云课堂"]
     pool = POOLS.get(pt) or POOLS["云课堂"]
@@ -340,15 +335,9 @@ def compile_cover(r: dict, overlay: bool) -> Cover:
     parts.append(f"Palette: only 2-3 anchored hues drawn from {palette}, plus one neutral; "
                  "restrained and deliberate, never a rainbow.")
     parts.append(PLATFORM_DNA + ".")
-    if title and not overlay:   # baked 模式才让模型烤字；overlay 由 NO_TEXT_CLAUSE 全面禁字
-        parts.append(
-            f"Integrate the title text \"{title}\" as a deliberate typographic element: a crafted "
-            "typographic lockup, clean modern sans-serif, horizontal, high contrast, perfectly "
-            "legible, placed in the reserved negative space; spell it exactly with no extra words; "
-            "use Simplified Chinese glyphs (简体中文字形, not Traditional); every stroke crisp.")
     parts.append(AVOID_CLAUSE + ".")
     spec = " · ".join((pt, medium.split(",")[0], palette, comp.split(",")[0]))
-    return Cover(product_type=pt, title_text=title or None, spec=spec, prompt=" ".join(parts))
+    return Cover(product_type=pt, spec=spec, prompt=" ".join(parts) + NO_TEXT_CLAUSE)
 
 
 def _load_font(size: int, spec: dict = None):
@@ -569,7 +558,6 @@ def draw_title_overlay(img: Image.Image, text: str, composition: str,
         logging.info("  标题自适应压缩: %r → %s", text, " / ".join(lines))
 
     line_ws = [_line_w(font, track, ln) for ln in lines]
-    block_w = max(line_ws)
     block_h = len(lines) * line_h + (len(lines) - 1) * gap
     xs = [rx0 + (max_w - lw) // 2 if align == "center" else rx0 for lw in line_ws]
     by0 = ry0 + (max_h - block_h) // 2
@@ -660,25 +648,23 @@ def render(client: genai.Client, prompt: str, retries: int = 3):
 
 
 def process_one(client: genai.Client, i: int, c: Cover, title: Optional[str],
-                composition: str, font_style: str, overlay: bool) -> dict:
-    """单条封面：出图 →（overlay 时）后期排版标题 → 存盘。供线程池并发调用。"""
+                composition: str, font_style: str) -> dict:
+    """单条封面：出图 → 真字体排版标题 → 存盘。供线程池并发调用。"""
     name = f"{i+1:02d}_{c.product_type}"
     path = os.path.join(OUT, f"{name}.png")
-    prompt = c.prompt + NO_TEXT_CLAUSE if overlay else c.prompt
-    img = render(client, prompt)
-    if img is not None and overlay and title:
+    img = render(client, c.prompt)
+    if img is not None and title:
         img = draw_title_overlay(img, title, composition, font_style)
         flabel = (FONT_STYLES.get(font_style) or FONT_STYLES["sans"])["label"]
-        logging.info("  ✎ [%d] 后期排版标题（%s）: %s", i + 1, flabel, title)
+        logging.info("  ✎ [%d] 排版标题（%s）: %s", i + 1, flabel, title)
     if img is not None:
         img.save(path)
         logging.info("  ✅ [%d] %s (%dx%d)", i + 1, path, *img.size)
     else:
         logging.error("  ❌ [%d] %s 出图失败", i + 1, name)
-    return {"index": i + 1, "product_type": c.product_type,
-            "title_text": title if overlay else c.title_text,
-            "title_mode": TITLE_MODE, "spec": c.spec, "composition": composition,
-            "font": font_style, "prompt": c.prompt,
+    return {"index": i + 1, "product_type": c.product_type, "title_text": title,
+            "spec": c.spec, "composition": composition, "font": font_style,
+            "prompt": c.prompt,
             # manifest 里存相对路径，保持跨机器可读、git diff 干净
             "image": os.path.relpath(path, BASE_DIR) if img is not None else None}
 
@@ -700,10 +686,8 @@ def main():
     client = genai.Client(api_key=api_key)
     os.makedirs(OUT, exist_ok=True)
 
-    overlay = TITLE_MODE == "overlay"
-    logging.info("标题模式: %s", "overlay（后期真字体合成）" if overlay else "baked（模型烤字）")
     real_titles = [r.get("title") for r in requests]
-    covers = [compile_cover(r, overlay) for r in requests]   # 本地模板编译，0 次文本模型调用
+    covers = [compile_cover(r) for r in requests]   # 本地模板编译，0 次文本模型调用
 
     manifest = [None] * len(covers)
     logging.info("%s 并发出图（%d workers，每张封面 = 1 次模型调用）…", IMAGE_MODEL, WORKERS)
@@ -714,7 +698,7 @@ def main():
             title = real_titles[i] if i < len(real_titles) else None
             variant = (requests[i].get("variant") or {}) if i < len(requests) else {}
             comp, fstyle = variant.get("composition", ""), variant.get("font", "sans")
-            futs[pool.submit(process_one, client, i, c, title, comp, fstyle, overlay)] = i
+            futs[pool.submit(process_one, client, i, c, title, comp, fstyle)] = i
         for fut in as_completed(futs):
             i = futs[fut]
             try:
@@ -725,8 +709,7 @@ def main():
                 title = real_titles[i] if i < len(real_titles) else None
                 variant = (requests[i].get("variant") or {}) if i < len(requests) else {}
                 manifest[i] = {"index": i + 1, "product_type": c.product_type,
-                               "title_text": title if overlay else c.title_text,
-                               "title_mode": TITLE_MODE, "spec": c.spec,
+                               "title_text": title, "spec": c.spec,
                                "font": variant.get("font", "sans"),
                                "prompt": c.prompt, "image": None}
 
